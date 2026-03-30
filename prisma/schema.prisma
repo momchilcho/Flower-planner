@@ -1,0 +1,209 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String?
+  image        String?
+  passwordHash String?
+  tier         Tier         @default(FREE)
+  stripeId     String?      @unique
+  subStatus    SubStatus    @default(NONE)
+  subEndDate   DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  plans        GardenPlan[]
+  chats        ChatSession[]
+  accounts     Account[]
+  sessions     Session[]
+}
+
+enum Tier {
+  FREE
+  PRO_MONTHLY
+  PRO_YEARLY
+  ONE_TIME
+}
+
+enum SubStatus {
+  NONE
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+}
+
+model GardenPlan {
+  id             String      @id @default(cuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String      @default("My Garden")
+  status         PlanStatus  @default(DRAFT)
+  lengthMeters   Float
+  widthMeters    Float?
+  shapeType      ShapeType   @default(RECTANGLE)
+  shapeData      Json?
+  sketchUrl      String?
+  sketchAnalysis Json?
+  country        String      @default("BE")
+  climateZone    String      @default("8")
+  sunExposure    SunType     @default(FULL_SUN)
+  soilType       SoilType    @default(LOAM)
+  preferences    Json?
+  sections       Json?
+  plantPositions Json?
+  plantList      Json?
+  isPublic       Boolean     @default(false)
+  shareSlug      String?     @unique
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  chatSession    ChatSession?
+
+  @@index([userId])
+}
+
+enum PlanStatus {
+  DRAFT
+  GENERATING
+  COMPLETE
+  ARCHIVED
+}
+
+enum ShapeType {
+  RECTANGLE
+  ORGANIC
+  L_SHAPE
+  TRIANGLE
+  CUSTOM
+}
+
+enum SunType {
+  FULL_SUN
+  PARTIAL_SHADE
+  FULL_SHADE
+}
+
+enum SoilType {
+  CLAY
+  SANDY
+  LOAM
+  CHALKY
+  PEATY
+}
+
+model ChatSession {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId    String?       @unique
+  plan      GardenPlan?   @relation(fields: [planId], references: [id])
+  messages  ChatMessage[]
+  context   Json?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([userId])
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      MessageRole
+  content   String      @db.Text
+  imageUrl  String?
+  metadata  Json?
+  createdAt DateTime    @default(now())
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+model PlantDatabase {
+  id             String    @id @default(cuid())
+  commonName     String
+  latinName      String
+  variety        String?
+  heightMinCm    Int
+  heightMaxCm    Int
+  spreadMinCm    Int
+  spreadMaxCm    Int
+  bloomMonths    Int[]
+  color          String
+  iconEmoji      String
+  imageUrl       String?
+  row            PlantRow
+  isFragrant     Boolean   @default(false)
+  beeRating      Int       @default(3)
+  sunRequirement SunType
+  soilPreference SoilType[]
+  climateZones   String[]
+  spacingCm      Int
+  priceEstimate  Float
+  careLevel      CareLevel @default(LOW)
+  descriptionEn  String?   @db.Text
+  descriptionNl  String?   @db.Text
+  descriptionFr  String?   @db.Text
+  descriptionDe  String?   @db.Text
+  descriptionBg  String?   @db.Text
+
+  @@index([climateZones])
+  @@index([row])
+}
+
+enum PlantRow {
+  BACK
+  MIDDLE
+  FRONT
+}
+
+enum CareLevel {
+  MINIMAL
+  LOW
+  MEDIUM
+  HIGH
+}
+
+// NextAuth required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
