@@ -1,6 +1,5 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**.unsplash.com" },
@@ -9,9 +8,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "avatars.githubusercontent.com" },
     ],
   },
-  experimental: {
-    serverComponentsExternalPackages: ["sharp", "@prisma/client"],
-  },
+  serverExternalPackages: ["sharp", "@prisma/client"],
 };
 
 export default nextConfig;

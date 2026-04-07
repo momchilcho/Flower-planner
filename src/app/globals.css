@@ -1,0 +1,297 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 50% 97%;
+    --foreground: 100 20% 10%;
+    --card: 40 30% 98%;
+    --card-foreground: 100 20% 10%;
+    --popover: 40 30% 98%;
+    --popover-foreground: 100 20% 10%;
+    --primary: 105 52% 24%;
+    --primary-foreground: 40 50% 97%;
+    --secondary: 35 40% 60%;
+    --secondary-foreground: 100 20% 10%;
+    --muted: 40 20% 92%;
+    --muted-foreground: 100 10% 45%;
+    --accent: 340 60% 73%;
+    --accent-foreground: 100 20% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 40 50% 97%;
+    --border: 40 20% 85%;
+    --input: 40 20% 85%;
+    --ring: 105 52% 24%;
+    --radius: 0.75rem;
+
+    /* Garden brand colors */
+    --garden-green: #2D5F1E;
+    --garden-green-light: #4A8A32;
+    --garden-green-dark: #1A3A10;
+    --garden-earth: #C8A96E;
+    --garden-earth-light: #DFC49A;
+    --garden-earth-dark: #A08040;
+    --garden-pink: #E88AAD;
+    --garden-pink-light: #F2B0C8;
+    --garden-pink-dark: #D06090;
+    --garden-cream: #FAF6EF;
+    --garden-cream-dark: #F0E8D8;
+    --garden-forest: #1A1F16;
+    --garden-brown: #2A2820;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-garden-cream text-garden-forest font-body antialiased;
+    background-color: #FAF6EF;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Custom scrollbar */
+@layer utilities {
+  .scrollbar-garden {
+    scrollbar-width: thin;
+    scrollbar-color: #C8A96E #FAF6EF;
+  }
+
+  .scrollbar-garden::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-garden::-webkit-scrollbar-track {
+    background: #FAF6EF;
+    border-radius: 3px;
+  }
+
+  .scrollbar-garden::-webkit-scrollbar-thumb {
+    background-color: #C8A96E;
+    border-radius: 3px;
+  }
+
+  .scrollbar-garden::-webkit-scrollbar-thumb:hover {
+    background-color: #A08040;
+  }
+
+  /* Chat specific scrollbar */
+  .scrollbar-chat {
+    scrollbar-width: thin;
+    scrollbar-color: #DFC49A transparent;
+  }
+
+  .scrollbar-chat::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .scrollbar-chat::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-chat::-webkit-scrollbar-thumb {
+    background-color: #DFC49A;
+    border-radius: 2px;
+  }
+}
+
+/* Prose styles for garden descriptions */
+@layer components {
+  .prose-garden {
+    @apply text-garden-forest leading-relaxed;
+  }
+
+  .prose-garden p {
+    @apply mb-3 last:mb-0;
+  }
+
+  .prose-garden strong {
+    @apply font-semibold text-garden-green;
+  }
+
+  .prose-garden em {
+    @apply italic text-garden-earth-dark;
+  }
+
+  .prose-garden ul {
+    @apply list-disc list-inside space-y-1 mb-3;
+  }
+
+  .prose-garden ol {
+    @apply list-decimal list-inside space-y-1 mb-3;
+  }
+
+  .prose-garden li {
+    @apply text-garden-forest;
+  }
+
+  .prose-garden h3 {
+    @apply font-display text-lg font-semibold text-garden-green mt-4 mb-2;
+  }
+
+  .prose-garden code {
+    @apply font-mono text-sm bg-garden-cream-dark px-1 py-0.5 rounded;
+  }
+
+  /* Plant card in chat */
+  .plant-inline-card {
+    @apply inline-flex items-center gap-1.5 bg-white border border-garden-earth-light rounded-full px-3 py-1 text-sm;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-break {
+    page-break-before: always;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .garden-schema-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    break-inside: avoid;
+  }
+
+  .shopping-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .shopping-table th,
+  .shopping-table td {
+    border: 1px solid #ccc;
+    padding: 6px 8px;
+  }
+
+  .bloom-calendar-container {
+    break-inside: avoid;
+  }
+}
+
+/* Animation utilities */
+@layer utilities {
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+
+  .animation-delay-500 {
+    animation-delay: 500ms;
+  }
+
+  .animation-delay-700 {
+    animation-delay: 700ms;
+  }
+
+  /* Glass morphism */
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(250, 246, 239, 0.8);
+  }
+
+  .glass-dark {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(26, 31, 22, 0.7);
+  }
+
+  /* Gradient text */
+  .text-gradient-garden {
+    background: linear-gradient(135deg, #2D5F1E, #4A8A32, #C8A96E);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Shimmer effect */
+  .shimmer-bg {
+    background: linear-gradient(
+      90deg,
+      rgba(255,255,255,0) 0%,
+      rgba(255,255,255,0.4) 50%,
+      rgba(255,255,255,0) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+}
+
+/* Typing indicator dots */
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #C8A96E;
+  animation: typingBounce 1.4s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typingBounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+}
+
+/* Garden schema tooltip */
+.garden-tooltip {
+  pointer-events: none;
+  position: fixed;
+  z-index: 9999;
+  padding: 8px 12px;
+  background: rgba(26, 31, 22, 0.92);
+  color: #FAF6EF;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  max-width: 200px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  white-space: nowrap;
+}
+
+/* Focus styles */
+@layer base {
+  :focus-visible {
+    outline: 2px solid #2D5F1E;
+    outline-offset: 2px;
+  }
+}
