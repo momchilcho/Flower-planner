@@ -202,7 +202,8 @@ export async function POST(req: NextRequest) {
             sessionId: chatSession!.id,
             role: "ASSISTANT",
             content: fullResponse,
-            metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            metadata: Object.keys(metadata).length > 0 ? (metadata as any) : undefined,
           },
         });
 

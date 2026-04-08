@@ -5,7 +5,8 @@ import type { GardenSpec, Plant, Section, PlantPosition, ShoppingItem, PlanData 
 
 // Plant selection algorithm based on garden spec
 async function selectPlants(spec: GardenSpec): Promise<Plant[]> {
-  const filters: Parameters<typeof prisma.plantDatabase.findMany>[0]["where"] = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const filters: any = {
     sunRequirement: spec.sunExposure,
     climateZones: { has: spec.climateZone },
   };

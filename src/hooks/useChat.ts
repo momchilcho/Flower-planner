@@ -46,7 +46,7 @@ export function useChat({ sessionId, onPlanGenerated }: UseChatOptions) {
         sessionId: currentSessionId ?? "temp",
         role: "USER",
         content: text,
-        imageUrl: imageBase64 ? "data:image/jpeg;base64," + imageBase64.split(",")[1] ?? imageBase64 : null,
+        imageUrl: imageBase64 ? ("data:image/jpeg;base64," + (imageBase64.split(",")[1] || imageBase64)) : null,
         metadata: null,
         createdAt: new Date(),
       };

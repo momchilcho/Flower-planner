@@ -8,7 +8,9 @@ const nextConfig = {
       { protocol: "https", hostname: "avatars.githubusercontent.com" },
     ],
   },
-  serverExternalPackages: ["sharp", "@prisma/client"],
+  experimental: {
+    serverComponentsExternalPackages: ["sharp", "@prisma/client"],
+  },
 };
 
 export default nextConfig;

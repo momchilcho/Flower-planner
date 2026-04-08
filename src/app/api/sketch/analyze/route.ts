@@ -16,14 +16,14 @@ export async function POST(req: NextRequest) {
       }
 
       // Process with sharp if available
-      let buffer = Buffer.from(await file.arrayBuffer());
+      let buffer = Buffer.from(await file.arrayBuffer()) as Buffer;
 
       try {
         const sharp = (await import("sharp")).default;
-        buffer = await sharp(buffer)
+        buffer = (await sharp(buffer)
           .resize(2048, 2048, { fit: "inside", withoutEnlargement: true })
           .jpeg({ quality: 85 })
-          .toBuffer();
+          .toBuffer()) as Buffer;
         mimeType = "image/jpeg";
       } catch {
         // sharp not available, use original

@@ -114,6 +114,7 @@ export interface GardenSpec {
   colorPreference?: string;
   maintenanceLevel?: "LOW" | "MEDIUM" | "HIGH";
   curvePoints?: CurvePoint[];
+  name?: string;
 }
 
 // Garden Plan (matches DB GardenPlan)
