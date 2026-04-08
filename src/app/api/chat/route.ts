@@ -71,7 +71,6 @@ export async function POST(req: NextRequest) {
       chatSession = await prisma.chatSession.create({
         data: {
           userId: await getOrCreateAnonymousUser(),
-          messages: {},
           context: {},
         },
         include: { messages: true },
