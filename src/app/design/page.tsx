@@ -1,18 +1,16 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
-import React, { useState, useEffect } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { Leaf, MessageCircle, Map } from "lucide-react";
+import { Loader2, MessageCircle, Map } from "lucide-react";
 import { ChatInterface } from "@/components/chat/ChatInterface";
 import { GardenCanvas } from "@/components/garden/GardenCanvas";
 import { Navbar } from "@/components/layout/Navbar";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { GardenPlan } from "@/types";
 
-export default function DesignPage() {
+function DesignContent() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -21,7 +19,6 @@ export default function DesignPage() {
 
   const planId = searchParams.get("planId");
 
-  // Load plan if planId in URL
   useEffect(() => {
     if (planId) {
       fetch(`/api/plans/${planId}`)
@@ -29,9 +26,7 @@ export default function DesignPage() {
         .then((data) => {
           if (data.plan) {
             setPlan(data.plan);
-            if (data.plan.chatSession?.id) {
-              setSessionId(data.plan.chatSession.id);
-            }
+            if (data.plan.chatSession?.id) setSessionId(data.plan.chatSession.id);
           }
         })
         .catch(console.error);
@@ -45,10 +40,7 @@ export default function DesignPage() {
         .then((data) => {
           if (data.plan) {
             setPlan(data.plan);
-            // Auto-switch to preview when plan is ready
-            if (data.plan.status === "COMPLETE") {
-              setActiveTab("preview");
-            }
+            if (data.plan.status === "COMPLETE") setActiveTab("preview");
           }
         })
         .catch(console.error);
@@ -67,65 +59,51 @@ export default function DesignPage() {
 
       {/* Desktop layout */}
       <div className="hidden md:flex flex-1 pt-16 h-screen">
-        {/* Chat panel - 60% */}
-        <div className="w-[60%] flex flex-col p-4 gap-0 border-r border-garden-earth-light">
+        <div className="w-[60%] flex flex-col p-4 border-r border-garden-earth-light">
           <div className="flex-1 min-h-0">
-            <ChatInterface
-              sessionId={sessionId}
-              planId={plan?.id}
-              onPlanUpdate={handlePlanUpdate}
-              className="h-full"
-            />
+            <ChatInterface sessionId={sessionId} planId={plan?.id} onPlanUpdate={handlePlanUpdate} className="h-full" />
           </div>
         </div>
-
-        {/* Garden preview - 40% */}
         <div className="w-[40%] flex flex-col p-4">
-          <GardenCanvas
-            plan={plan}
-            isPremium={isPremium}
-            className="flex-1 min-h-0"
-          />
+          <GardenCanvas plan={plan} isPremium={isPremium} className="flex-1 min-h-0" />
         </div>
       </div>
 
-      {/* Mobile layout - tabs */}
+      {/* Mobile layout */}
       <div className="md:hidden flex flex-col flex-1 pt-16">
         <div className="bg-white border-b border-garden-earth-light px-4 py-2">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "chat" | "preview")}>
             <TabsList className="w-full">
               <TabsTrigger value="chat" className="flex-1 gap-1.5">
-                <MessageCircle className="w-4 h-4" />
-                Chat
+                <MessageCircle className="w-4 h-4" />Chat
               </TabsTrigger>
               <TabsTrigger value="preview" className="flex-1 gap-1.5">
-                <Map className="w-4 h-4" />
-                Preview
-                {plan?.status === "COMPLETE" && (
-                  <span className="w-2 h-2 bg-garden-green rounded-full" />
-                )}
+                <Map className="w-4 h-4" />Preview
+                {plan?.status === "COMPLETE" && <span className="w-2 h-2 bg-garden-green rounded-full" />}
               </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
-
         <div className="flex-1 overflow-hidden">
           {activeTab === "chat" ? (
-            <ChatInterface
-              sessionId={sessionId}
-              planId={plan?.id}
-              onPlanUpdate={handlePlanUpdate}
-              className="h-full rounded-none border-none"
-            />
+            <ChatInterface sessionId={sessionId} planId={plan?.id} onPlanUpdate={handlePlanUpdate} className="h-full rounded-none border-none" />
           ) : (
-            <GardenCanvas
-              plan={plan}
-              isPremium={isPremium}
-              className="h-full rounded-none border-none"
-            />
+            <GardenCanvas plan={plan} isPremium={isPremium} className="h-full rounded-none border-none" />
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DesignPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-garden-cream flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-garden-green" />
+      </div>
+    }>
+      <DesignContent />
+    </Suspense>
   );
 }
