@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { Sprout } from "lucide-react";
+import { Sprout, Lock, Loader2, CheckCircle } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { GardenSchema } from "./GardenSchema";
 import { BloomCalendar } from "./BloomCalendar";
 import { ShoppingList } from "./ShoppingList";
 import { PlantGuide } from "./PlantGuide";
 import { PaywallOverlay } from "./PaywallOverlay";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { GardenPlan, PlanData } from "@/types";
 
@@ -70,6 +71,85 @@ function EmptyState() {
   );
 }
 
+function SneakPeekBanner({ planId }: { planId: string }) {
+  const [loading, setLoading] = useState<string | null>(null);
+
+  const checkout = async (priceType: "monthly" | "yearly" | "onetime") => {
+    setLoading(priceType);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priceType, planId }),
+      });
+      const { url, error } = await res.json();
+      if (url) window.location.href = url;
+      else throw new Error(error ?? "Checkout failed");
+    } catch {
+      setLoading(null);
+    }
+  };
+
+  const perks = [
+    "Full plan with 15+ placed plants",
+    "12-month bloom calendar",
+    "Shopping list with quantities & prices",
+    "PDF export",
+  ];
+
+  return (
+    <div className="flex-shrink-0 bg-white border-t-2 border-garden-green/30 px-4 py-3">
+      <div className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-full bg-garden-green/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <Lock className="w-4 h-4 text-garden-green" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-garden-forest font-body">
+            Your garden is designed! Unlock the full plan
+          </p>
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 mb-2.5">
+            {perks.map((p) => (
+              <span key={p} className="flex items-center gap-1 text-xs text-muted-foreground font-body">
+                <CheckCircle className="w-3 h-3 text-garden-green flex-shrink-0" />
+                {p}
+              </span>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="garden"
+              className="h-8 text-xs px-3"
+              onClick={() => checkout("onetime")}
+              disabled={!!loading}
+            >
+              {loading === "onetime" ? <Loader2 className="w-3 h-3 animate-spin" /> : "€29.99 one-time"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs px-3 border-garden-green text-garden-green hover:bg-garden-green/5"
+              onClick={() => checkout("monthly")}
+              disabled={!!loading}
+            >
+              {loading === "monthly" ? <Loader2 className="w-3 h-3 animate-spin" /> : "€9.99 / month"}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 text-xs px-3 text-muted-foreground"
+              onClick={() => checkout("yearly")}
+              disabled={!!loading}
+            >
+              {loading === "yearly" ? <Loader2 className="w-3 h-3 animate-spin" /> : "€49.99 / year"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function GardenCanvas({ plan, isPremium = false, className }: GardenCanvasProps) {
   const [activeTab, setActiveTab] = useState("schema");
 
@@ -116,14 +196,21 @@ export function GardenCanvas({ plan, isPremium = false, className }: GardenCanva
           </TabsList>
         </div>
 
-        <div className="flex-1 overflow-hidden relative">
+        <div className="flex-1 overflow-hidden relative min-h-0">
           <TabsContent value="schema" className="h-full m-0">
-            <div className="h-full relative">
-              <GardenSchema plan={plan} isPremium={isPremium} />
-              {!isPremium && (
-                <PaywallOverlay planId={plan.id} feature="schema" />
-              )}
-            </div>
+            {isPremium ? (
+              <GardenSchema plan={plan} isPremium={true} className="h-full" />
+            ) : (
+              /* Free users: show schema (sneak peek) + upgrade banner below */
+              <div className="h-full flex flex-col">
+                <div className="flex-1 min-h-0 relative">
+                  <GardenSchema plan={plan} isPremium={false} className="h-full" />
+                  {/* Gradient fade at the bottom to hint there's more */}
+                  <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white/80 to-transparent pointer-events-none" />
+                </div>
+                <SneakPeekBanner planId={plan.id} />
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="bloom" className="h-full m-0">

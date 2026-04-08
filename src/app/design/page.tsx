@@ -60,12 +60,12 @@ function DesignContent() {
 
       {/* Desktop layout */}
       <div className="hidden md:flex flex-1 pt-16 h-screen">
-        <div className="w-[60%] flex flex-col p-4 border-r border-garden-earth-light">
+        <div className="w-1/2 flex flex-col p-4 border-r border-garden-earth-light">
           <div className="flex-1 min-h-0">
             <ChatInterface sessionId={sessionId} planId={plan?.id} onPlanUpdate={handlePlanUpdate} className="h-full" />
           </div>
         </div>
-        <div className="w-[40%] flex flex-col p-4">
+        <div className="w-1/2 flex flex-col p-4">
           <GardenCanvas plan={plan} isPremium={isPremium} className="flex-1 min-h-0" />
         </div>
       </div>
