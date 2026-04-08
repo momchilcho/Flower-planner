@@ -47,40 +47,53 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { message, sessionId, imageBase64 } = body as {
-    message: string;
-    sessionId?: string | null;
-    imageBase64?: string | null;
-  };
+  let body: { message: string; sessionId?: string | null; imageBase64?: string | null };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+  const { message, sessionId, imageBase64 } = body;
 
-  const authSession = await getServerSession();
+  let authSession;
+  try {
+    authSession = await getServerSession();
+  } catch (e) {
+    console.error("[chat] getServerSession failed:", e);
+    return NextResponse.json({ error: `Auth error: ${String(e)}` }, { status: 500 });
+  }
   const userId = (authSession?.user as { id?: string })?.id;
 
   // Get or create chat session
-  let chatSession = sessionId
-    ? await prisma.chatSession.findUnique({
-        where: { id: sessionId },
-        include: { messages: { orderBy: { createdAt: "asc" }, take: 50 } },
-      })
-    : null;
+  let chatSession;
+  try {
+    chatSession = sessionId
+      ? await prisma.chatSession.findUnique({
+          where: { id: sessionId },
+          include: { messages: { orderBy: { createdAt: "asc" }, take: 50 } },
+        })
+      : null;
 
-  if (!chatSession) {
-    if (!userId) {
-      // Create anonymous session (limited)
-      chatSession = await prisma.chatSession.create({
-        data: {
-          userId: await getOrCreateAnonymousUser(),
-          context: {},
-        },
-        include: { messages: true },
-      });
-    } else {
-      chatSession = await prisma.chatSession.create({
-        data: { userId, context: {} },
-        include: { messages: true },
-      });
+    if (!chatSession) {
+      if (!userId) {
+        // Create anonymous session (limited)
+        chatSession = await prisma.chatSession.create({
+          data: {
+            userId: await getOrCreateAnonymousUser(),
+            context: {},
+          },
+          include: { messages: true },
+        });
+      } else {
+        chatSession = await prisma.chatSession.create({
+          data: { userId, context: {} },
+          include: { messages: true },
+        });
+      }
     }
+  } catch (e) {
+    console.error("[chat] DB session error:", e);
+    return NextResponse.json({ error: `Database error: ${String(e)}` }, { status: 500 });
   }
 
   // Rate limit check for free users
@@ -92,14 +105,19 @@ export async function POST(req: NextRequest) {
   }
 
   // Save user message
-  await prisma.chatMessage.create({
-    data: {
-      sessionId: chatSession.id,
-      role: "USER",
-      content: message ?? "",
-      imageUrl: imageBase64 ? "data:attached" : null,
-    },
-  });
+  try {
+    await prisma.chatMessage.create({
+      data: {
+        sessionId: chatSession.id,
+        role: "USER",
+        content: message ?? "",
+        imageUrl: imageBase64 ? "data:attached" : null,
+      },
+    });
+  } catch (e) {
+    console.error("[chat] Failed to save user message:", e);
+    return NextResponse.json({ error: `Failed to save message: ${String(e)}` }, { status: 500 });
+  }
 
   // Build Anthropic messages history
   const historyMessages = chatSession.messages.slice(-20).map((m) => ({
@@ -213,8 +231,9 @@ export async function POST(req: NextRequest) {
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
         controller.close();
       } catch (error) {
-        console.error("Streaming error:", error);
-        controller.enqueue(encoder.encode(`data: Sorry, I encountered an error. Please try again.\n\n`));
+        console.error("[chat] Streaming error:", error);
+        const errMsg = error instanceof Error ? error.message : String(error);
+        controller.enqueue(encoder.encode(`data: Sorry, I encountered an error: ${errMsg}\n\n`));
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
         controller.close();
       }
