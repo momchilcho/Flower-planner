@@ -1,16 +1,41 @@
 "use client";
 
-import React, { useState } from "react";
-import { Wand2, RefreshCw, Loader2 } from "lucide-react";
+import React, { useState, Component, type ReactNode } from "react";
+import { Wand2, RefreshCw, Loader2, ImageOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+// Error boundary so a crash here never takes down the rest of the canvas
+class VisualizationErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full gap-3 p-8 text-center text-muted-foreground">
+          <ImageOff className="w-8 h-8 opacity-40" />
+          <p className="text-sm font-body">Visualisation unavailable</p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 interface GardenVisualizationProps {
   planId: string;
   className?: string;
 }
 
-export function GardenVisualization({ planId, className }: GardenVisualizationProps) {
+function GardenVisualizationInner({ planId, className }: GardenVisualizationProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +61,7 @@ export function GardenVisualization({ planId, className }: GardenVisualizationPr
 
   if (isLoading) {
     return (
-      <div className={cn("flex flex-col items-center justify-center h-full gap-5 p-8 text-center bg-garden-cream/30", className)}>
+      <div className={cn("flex flex-col items-center justify-center h-full gap-5 p-8 text-center bg-amber-50/20", className)}>
         <div className="w-20 h-20 rounded-full border-4 border-garden-green/20 flex items-center justify-center">
           <Loader2 className="w-9 h-9 text-garden-green animate-spin" />
         </div>
@@ -46,11 +71,7 @@ export function GardenVisualization({ planId, className }: GardenVisualizationPr
         </div>
         <div className="flex gap-1.5">
           {["🌱", "🌿", "🌸", "🌺", "🌻"].map((emoji, i) => (
-            <span
-              key={i}
-              className="text-xl animate-bounce"
-              style={{ animationDelay: `${i * 0.15}s` }}
-            >
+            <span key={i} className="text-xl animate-bounce" style={{ animationDelay: `${i * 0.15}s` }}>
               {emoji}
             </span>
           ))}
@@ -64,11 +85,7 @@ export function GardenVisualization({ planId, className }: GardenVisualizationPr
       <div className={cn("flex flex-col h-full", className)}>
         <div className="flex-1 min-h-0 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imageUrl}
-            alt="AI-generated garden visualization"
-            className="w-full h-full object-cover"
-          />
+          <img src={imageUrl} alt="AI-generated garden visualisation" className="w-full h-full object-cover" />
         </div>
         <div className="flex items-center justify-between px-4 py-2.5 bg-white border-t border-garden-earth-light flex-shrink-0">
           <p className="text-xs text-muted-foreground font-body italic">
@@ -92,7 +109,7 @@ export function GardenVisualization({ planId, className }: GardenVisualizationPr
   return (
     <div className={cn("flex flex-col items-center justify-center h-full gap-6 p-8 text-center", className)}>
       <div className="relative">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-garden-green/20 to-garden-sage/20 flex items-center justify-center">
+        <div className="w-20 h-20 rounded-full bg-garden-green/10 flex items-center justify-center">
           <Wand2 className="w-10 h-10 text-garden-green" />
         </div>
         <span className="absolute -top-1 -right-1 text-2xl">✨</span>
@@ -118,9 +135,15 @@ export function GardenVisualization({ planId, className }: GardenVisualizationPr
         Generate Realistic Preview
       </Button>
 
-      <p className="text-xs text-muted-foreground font-body">
-        Powered by FLUX AI · ~15 seconds
-      </p>
+      <p className="text-xs text-muted-foreground font-body">Powered by FLUX AI · ~15 seconds</p>
     </div>
+  );
+}
+
+export function GardenVisualization(props: GardenVisualizationProps) {
+  return (
+    <VisualizationErrorBoundary>
+      <GardenVisualizationInner {...props} />
+    </VisualizationErrorBoundary>
   );
 }
