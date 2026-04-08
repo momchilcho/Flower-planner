@@ -40,7 +40,8 @@ function DesignContent() {
         .then((data) => {
           if (data.plan) {
             setPlan(data.plan);
-            if (data.plan.status === "COMPLETE") setActiveTab("preview");
+            // On mobile, auto-switch to preview tab so user sees the garden
+            setActiveTab("preview");
           }
         })
         .catch(console.error);

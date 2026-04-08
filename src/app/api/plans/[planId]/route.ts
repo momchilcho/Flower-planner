@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+// Allow access to plans owned by the shared anonymous user (non-sensitive)
+async function isAnonymousOwner(userId: string) {
+  const anonUser = await prisma.user.findFirst({
+    where: { email: "anonymous@gardengenius.app" },
+    select: { id: true },
+  });
+  return anonUser?.id === userId;
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { planId: string } }
@@ -26,11 +35,11 @@ export async function GET(
     return NextResponse.json({ error: "Plan not found" }, { status: 404 });
   }
 
-  // Check access
+  // Allow if public, owner matches session, or plan belongs to anonymous user
   if (!plan.isPublic) {
     const session = await getServerSession();
     const userId = (session?.user as { id?: string })?.id;
-    if (plan.userId !== userId) {
+    if (plan.userId !== userId && !(await isAnonymousOwner(plan.userId))) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
   }

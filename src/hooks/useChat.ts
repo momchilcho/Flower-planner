@@ -93,40 +93,48 @@ export function useChat({ sessionId, onPlanGenerated }: UseChatOptions) {
         let newSessionId: string | null = null;
         let planId: string | null = null;
         let metadata: Record<string, unknown> = {};
+        // Buffer for partial SSE lines split across read() calls
+        let sseBuffer = "";
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n");
+          sseBuffer += decoder.decode(value, { stream: true });
+          const lines = sseBuffer.split("\n");
+          // Keep the last (possibly incomplete) line in the buffer
+          sseBuffer = lines.pop() ?? "";
 
           for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const data = line.slice(6);
-              if (data === "[DONE]") continue;
-              if (data.startsWith("[SESSION:")) {
-                newSessionId = data.slice(9, -1);
-                setCurrentSessionId(newSessionId);
-                continue;
-              }
-              if (data.startsWith("[PLAN:")) {
-                planId = data.slice(6, -1);
-                if (planId && onPlanGenerated) {
-                  onPlanGenerated(planId);
-                }
-                continue;
-              }
-              if (data.startsWith("[META:")) {
-                try {
-                  metadata = JSON.parse(data.slice(6, -1));
-                } catch {
-                  // ignore parse errors
-                }
-                continue;
-              }
-              aiContent += data;
+            if (!line.startsWith("data: ")) continue;
+            const data = line.slice(6).trim();
+            if (!data || data === "[DONE]") continue;
+
+            if (data.startsWith("[SESSION:")) {
+              newSessionId = data.slice(9, -1);
+              setCurrentSessionId(newSessionId);
+              continue;
             }
+            if (data.startsWith("[PLAN:")) {
+              planId = data.slice(6, -1);
+              if (planId && onPlanGenerated) {
+                onPlanGenerated(planId);
+              }
+              continue;
+            }
+            if (data.startsWith("[PLAN_ERROR:")) {
+              console.error("Plan generation error:", data.slice(12, -1));
+              continue;
+            }
+            if (data.startsWith("[META:")) {
+              try {
+                metadata = JSON.parse(data.slice(6, -1));
+              } catch {
+                // ignore parse errors
+              }
+              continue;
+            }
+            aiContent += data;
           }
 
           // Update AI message with streamed content
