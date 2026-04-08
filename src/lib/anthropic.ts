@@ -98,5 +98,5 @@ Return a structured JSON response:
 
 Be precise and helpful. If the image is not a garden sketch, explain what you see and ask for clarification.`;
 
-export const MODEL = "claude-3-5-sonnet-20241022";
-export const VISION_MODEL = "claude-3-5-sonnet-20241022";
+export const MODEL = "claude-sonnet-4-6";
+export const VISION_MODEL = "claude-sonnet-4-6";
