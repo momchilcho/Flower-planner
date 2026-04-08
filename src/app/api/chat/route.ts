@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { anthropic, GARDEN_DESIGN_SYSTEM_PROMPT, SKETCH_ANALYSIS_SYSTEM_PROMPT, MODEL } from "@/lib/anthropic";
+import { createOrUpdatePlan } from "@/lib/garden-plan-generator";
 
 const FREE_MESSAGE_LIMIT = 20;
 
@@ -183,28 +184,18 @@ export async function POST(req: NextRequest) {
         const planBlock = extractPlanBlock(fullResponse);
         const plantsBlock = extractPlantsBlock(fullResponse);
 
-        let savedPlanId: string | null = null;
-
-        if (planBlock?.trigger === "generate_plan") {
-          // Trigger plan generation
+        if (planBlock?.trigger === "generate_plan" && planBlock.gardenSpec) {
           try {
-            const generateRes = await fetch(`${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/api/plans/generate`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                gardenSpec: planBlock.gardenSpec,
-                sessionId: chatSession!.id,
-                userId: chatSession!.userId,
-              }),
-            });
-
-            if (generateRes.ok) {
-              const { plan } = await generateRes.json();
-              savedPlanId = plan.id;
-              controller.enqueue(encoder.encode(`data: [PLAN:${plan.id}]\n\n`));
-            }
+            const { id: newPlanId } = await createOrUpdatePlan(
+              planBlock.gardenSpec as Parameters<typeof createOrUpdatePlan>[0],
+              chatSession!.userId,
+              chatSession!.id
+            );
+            controller.enqueue(encoder.encode(`data: [PLAN:${newPlanId}]\n\n`));
           } catch (genErr) {
-            console.error("Plan generation failed:", genErr);
+            console.error("[chat] Plan generation failed:", genErr);
+            const genErrMsg = genErr instanceof Error ? genErr.message : String(genErr);
+            controller.enqueue(encoder.encode(`data: [PLAN_ERROR:${genErrMsg}]\n\n`));
           }
         }
 
