@@ -11,28 +11,65 @@ interface MessageBubbleProps {
   isStreaming?: boolean;
 }
 
-function renderContent(content: string): React.ReactNode {
+function stripInternalBlocks(content: string): string {
+  // Remove all special JSON blocks the app processes internally
+  return content
+    .replace(/```json-garden-plan[\s\S]*?```/g, "")
+    .replace(/```json-garden-spec[\s\S]*?```/g, "")
+    .replace(/```json-plants[\s\S]*?```/g, "")
+    .replace(/```json[\s\S]*?```/g, "")
+    .replace(/```[\s\S]*?```/g, "")
+    // Collapse 3+ consecutive newlines into 2
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function renderContent(rawContent: string): React.ReactNode {
+  const content = stripInternalBlocks(rawContent);
   if (!content) return null;
 
-  // Split by code blocks, bold, italic, etc.
-  const parts = content.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|\n)/g);
+  const nodes: React.ReactNode[] = [];
+  const lines = content.split("\n");
 
+  lines.forEach((line, lineIdx) => {
+    if (lineIdx > 0) nodes.push(<br key={`br-${lineIdx}`} />);
+
+    // Bullet point lines
+    const isBullet = /^[\-•*]\s/.test(line);
+    const text = isBullet ? line.replace(/^[\-•*]\s/, "") : line;
+
+    // Parse inline formatting within the line
+    const inline = parseInline(text);
+
+    if (isBullet) {
+      nodes.push(
+        <span key={lineIdx} className="flex items-start gap-1.5 mt-0.5">
+          <span className="text-garden-earth mt-0.5 flex-shrink-0">•</span>
+          <span>{inline}</span>
+        </span>
+      );
+    } else {
+      nodes.push(<span key={lineIdx}>{inline}</span>);
+    }
+  });
+
+  return nodes;
+}
+
+function parseInline(text: string): React.ReactNode {
+  // Split on **bold**, *italic*, `code` patterns
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
   return parts.map((part, i) => {
-    if (part === "\n") return <br key={i} />;
-    if (part.startsWith("**") && part.endsWith("**")) {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
       return <strong key={i} className="font-semibold text-garden-green">{part.slice(2, -2)}</strong>;
     }
     if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
       return <em key={i} className="italic text-garden-earth-dark">{part.slice(1, -1)}</em>;
     }
-    if (part.startsWith("`") && part.endsWith("`")) {
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
       return <code key={i} className="font-mono text-xs bg-garden-cream-dark px-1 py-0.5 rounded text-garden-forest">{part.slice(1, -1)}</code>;
     }
-    // Handle bullet points
-    if (part.startsWith("• ") || part.startsWith("- ")) {
-      return <span key={i} className="block pl-3 relative before:content-['•'] before:absolute before:left-0 before:text-garden-earth">{part.slice(2)}</span>;
-    }
-    return <span key={i}>{part}</span>;
+    return part || null;
   });
 }
 
