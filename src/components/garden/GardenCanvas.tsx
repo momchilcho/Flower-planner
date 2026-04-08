@@ -7,7 +7,6 @@ import { GardenSchema } from "./GardenSchema";
 import { BloomCalendar } from "./BloomCalendar";
 import { ShoppingList } from "./ShoppingList";
 import { PlantGuide } from "./PlantGuide";
-import { PaywallOverlay } from "./PaywallOverlay";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { GardenPlan, PlanData } from "@/types";
@@ -169,9 +168,6 @@ export function GardenCanvas({ plan, isPremium = false, className }: GardenCanva
     );
   }
 
-  const premiumTabs = ["bloom", "plants", "shopping"];
-  const isTabLocked = (tab: string) => !isPremium && premiumTabs.includes(tab);
-
   return (
     <div className={cn("flex flex-col h-full bg-white rounded-2xl border border-garden-earth-light overflow-hidden", className)}>
       <Tabs
@@ -214,30 +210,15 @@ export function GardenCanvas({ plan, isPremium = false, className }: GardenCanva
           </TabsContent>
 
           <TabsContent value="bloom" className="h-full m-0">
-            <div className="h-full relative">
-              <BloomCalendar plants={plants} isPremium={isPremium} />
-              {isTabLocked("bloom") && (
-                <PaywallOverlay planId={plan.id} feature="bloom calendar" />
-              )}
-            </div>
+            <BloomCalendar plants={plants} isPremium={isPremium} />
           </TabsContent>
 
           <TabsContent value="plants" className="h-full m-0">
-            <div className="h-full relative">
-              <PlantGuide plants={plants} isPremium={isPremium} />
-              {isTabLocked("plants") && (
-                <PaywallOverlay planId={plan.id} feature="plant guide" />
-              )}
-            </div>
+            <PlantGuide plants={plants} isPremium={isPremium} />
           </TabsContent>
 
           <TabsContent value="shopping" className="h-full m-0">
-            <div className="h-full relative">
-              <ShoppingList items={shoppingList} isPremium={isPremium} />
-              {isTabLocked("shopping") && (
-                <PaywallOverlay planId={plan.id} feature="shopping list" />
-              )}
-            </div>
+            <ShoppingList items={shoppingList} isPremium={isPremium} />
           </TabsContent>
         </div>
       </Tabs>
