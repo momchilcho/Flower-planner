@@ -81,7 +81,7 @@ export function PaywallOverlay({ planId }: PaywallOverlayProps) {
   return (
     <div className="absolute inset-0 flex items-center justify-center z-20 rounded-2xl overflow-hidden">
       {/* Blurred background */}
-      <div className="absolute inset-0 backdrop-blur-md bg-garden-cream/80" />
+      <div className="absolute inset-0 backdrop-blur-[3px] bg-white/20" />
 
       <div className="relative z-10 max-w-md w-full mx-4 bg-white rounded-2xl shadow-2xl border border-garden-earth-light overflow-hidden">
         {/* Header */}
