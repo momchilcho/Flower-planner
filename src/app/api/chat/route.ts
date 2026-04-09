@@ -6,6 +6,30 @@ import { createOrUpdatePlan } from "@/lib/garden-plan-generator";
 
 const FREE_MESSAGE_LIMIT = 20;
 
+function isOverloadedError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { status?: number; error?: { type?: string }; message?: string };
+  return (
+    e.status === 529 ||
+    e.error?.type === "overloaded_error" ||
+    (typeof e.message === "string" && e.message.toLowerCase().includes("overload"))
+  );
+}
+
+function friendlyErrorMessage(err: unknown): string {
+  if (isOverloadedError(err)) {
+    return "The AI service is temporarily busy. Please wait a moment and try again.";
+  }
+  if (err instanceof Error) return err.message;
+  // Try to parse raw Anthropic JSON error strings
+  try {
+    const parsed = JSON.parse(String(err));
+    return parsed?.error?.message ?? parsed?.message ?? String(err);
+  } catch {
+    return String(err);
+  }
+}
+
 // Helper to extract JSON plan block from AI response
 function extractPlanBlock(text: string): Record<string, unknown> | null {
   const match = text.match(/```json-garden-plan\n([\s\S]*?)\n```/);
@@ -154,24 +178,39 @@ export async function POST(req: NextRequest) {
         // Send session ID first
         controller.enqueue(encoder.encode(`data: [SESSION:${chatSession!.id}]\n\n`));
 
-        const anthropicStream = anthropic.messages.stream({
+        const streamParams = {
           model: MODEL,
           max_tokens: 2048,
           system: imageBase64 && !message ? SKETCH_ANALYSIS_SYSTEM_PROMPT : GARDEN_DESIGN_SYSTEM_PROMPT,
           messages: [
             ...historyMessages,
             {
-              role: "user",
+              role: "user" as const,
               content: currentContent.length === 1 && currentContent[0].type === "text"
                 ? (currentContent[0].text ?? "")
                 : (currentContent as Parameters<typeof anthropic.messages.stream>[0]["messages"][0]["content"]),
             },
           ],
-        });
+        };
+
+        // Retry up to 3 times on overload (1s, 2s backoff)
+        let anthropicStream;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            anthropicStream = anthropic.messages.stream(streamParams);
+            break;
+          } catch (err) {
+            if (isOverloadedError(err) && attempt < 2) {
+              await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+              continue;
+            }
+            throw err;
+          }
+        }
 
         let fullResponse = "";
 
-        for await (const event of anthropicStream) {
+        for await (const event of anthropicStream!) {
           if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
             const text = event.delta.text;
             fullResponse += text;
@@ -223,7 +262,7 @@ export async function POST(req: NextRequest) {
         controller.close();
       } catch (error) {
         console.error("[chat] Streaming error:", error);
-        const errMsg = error instanceof Error ? error.message : String(error);
+        const errMsg = friendlyErrorMessage(error);
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(`Sorry, I encountered an error: ${errMsg}`)}\n\n`));
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
         controller.close();
