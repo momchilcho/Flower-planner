@@ -61,23 +61,23 @@ function DesignContent() {
     : false;
 
   return (
-    <div className="flex flex-col min-h-screen bg-garden-cream">
+    <div className="flex flex-col h-screen overflow-hidden bg-garden-cream">
       <Navbar />
 
       {/* Desktop layout */}
-      <div className="hidden md:flex flex-1 pt-16 h-screen">
-        <div className="w-1/2 flex flex-col p-4 border-r border-garden-earth-light">
+      <div className="hidden md:flex flex-1 min-h-0 pt-16">
+        <div className="w-1/2 flex flex-col p-4 border-r border-garden-earth-light overflow-hidden">
           <div className="flex-1 min-h-0">
             <ChatInterface sessionId={sessionId} planId={plan?.id} onPlanUpdate={handlePlanUpdate} className="h-full" />
           </div>
         </div>
-        <div className="w-1/2 flex flex-col p-4">
+        <div className="w-1/2 flex flex-col p-4 overflow-hidden">
           <GardenCanvas plan={plan} isPremium={isPremium} className="flex-1 min-h-0" />
         </div>
       </div>
 
       {/* Mobile layout */}
-      <div className="md:hidden flex flex-col flex-1 pt-16">
+      <div className="md:hidden flex flex-col flex-1 min-h-0 pt-16">
         <div className="bg-white border-b border-garden-earth-light px-4 py-2">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "chat" | "preview")}>
             <TabsList className="w-full">
@@ -91,7 +91,7 @@ function DesignContent() {
             </TabsList>
           </Tabs>
         </div>
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden">
           {activeTab === "chat" ? (
             <ChatInterface sessionId={sessionId} planId={plan?.id} onPlanUpdate={handlePlanUpdate} className="h-full rounded-none border-none" />
           ) : (
