@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { generateSlug } from "@/lib/utils";
 import type { GardenSpec, Plant, Section, PlantPosition, ShoppingItem, PlanData } from "@/types";
 
@@ -201,6 +202,24 @@ export function generateShoppingList(plants: Plant[], spec: GardenSpec): Shoppin
   });
 }
 
+// ─── Curve point generation for organic/wavy borders ─────────────────────────
+function generateCurvePoints(spec: GardenSpec): import("@/types").CurvePoint[] {
+  if (spec.shapeType !== "ORGANIC") return [];
+  // Use explicitly provided curve points if present
+  if (spec.curvePoints && spec.curvePoints.length > 0) return spec.curvePoints;
+
+  const maxWidth = spec.widthMeters ?? 2;
+  const endWidth = spec.widthAtEndsMeters ?? maxWidth;
+  const midWidth = spec.widthAtMiddleMeters ?? maxWidth;
+
+  // Sinusoidal profile: endWidth at 0 and 1, midWidth at 0.5
+  return Array.from({ length: 11 }, (_, i) => {
+    const position = i / 10;
+    const t = 0.5 - 0.5 * Math.cos(position * 2 * Math.PI); // 0 at ends, 1 at middle
+    return { position, width: endWidth + (midWidth - endWidth) * t };
+  });
+}
+
 // ─── Full plan creation (DB write) ───────────────────────────────────────────
 export async function createOrUpdatePlan(
   gardenSpec: GardenSpec,
@@ -221,6 +240,8 @@ export async function createOrUpdatePlan(
     generatedAt: new Date().toISOString(),
   };
 
+  const curvePoints = generateCurvePoints(gardenSpec);
+
   const commonFields = {
     name: gardenSpec.name ?? "My Garden",
     status: "COMPLETE" as const,
@@ -234,6 +255,9 @@ export async function createOrUpdatePlan(
     sections: sections as unknown as import("@prisma/client").Prisma.InputJsonValue,
     plantPositions: plantPositions as unknown as import("@prisma/client").Prisma.InputJsonValue,
     plantList: planData as unknown as import("@prisma/client").Prisma.InputJsonValue,
+    shapeData: curvePoints.length > 0
+      ? curvePoints as unknown as Prisma.InputJsonValue
+      : Prisma.JsonNull,
     shareSlug: generateSlug(gardenSpec.name ?? "my-garden") + "-" + Date.now().toString(36),
   };
 

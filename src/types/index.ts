@@ -115,6 +115,9 @@ export interface GardenSpec {
   maintenanceLevel?: "LOW" | "MEDIUM" | "HIGH";
   curvePoints?: CurvePoint[];
   name?: string;
+  // For organic/wavy borders: width at the two ends vs. the middle
+  widthAtEndsMeters?: number;
+  widthAtMiddleMeters?: number;
 }
 
 // Garden Plan (matches DB GardenPlan)

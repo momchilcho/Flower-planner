@@ -21,42 +21,50 @@ interface Tooltip {
   position: PlantPosition;
 }
 
-// Generate an organic SVG path for border shapes
+// Generate an organic SVG path for border shapes.
+// Coordinates are absolute (PADDING already included via offsetX/offsetY).
+// y=0+offset is the straight BACK edge; front edge depth = (width/maxWidth)*h
 function generateOrganicPath(
-  lengthM: number,
   widthM: number,
   curvePoints: CurvePoint[],
-  svgWidth: number,
-  svgHeight: number
+  w: number,      // usable width  = SVG_W - 2*PADDING
+  h: number,      // usable height = SVG_H - 2*PADDING
+  ox: number,     // PADDING x offset
+  oy: number      // PADDING y offset
 ): string {
   if (!curvePoints || curvePoints.length === 0) {
-    // Fall back to rectangle
-    return `M 0 0 L ${svgWidth} 0 L ${svgWidth} ${svgHeight} L 0 ${svgHeight} Z`;
+    return `M ${ox} ${oy} L ${ox + w} ${oy} L ${ox + w} ${oy + h} L ${ox} ${oy + h} Z`;
   }
 
-  const pixelsPerMeterX = svgWidth / lengthM;
-  const pixelsPerMeterY = svgHeight / widthM;
-
-  // Top edge (straight)
-  let path = `M 0 0 L ${svgWidth} 0`;
-
-  // Right edge
-  path += ` L ${svgWidth} ${svgHeight}`;
-
-  // Bottom edge (curved based on curvePoints)
-  const bottomPoints = curvePoints.map((cp) => ({
-    x: cp.position * svgWidth,
-    y: svgHeight - (cp.width / widthM) * svgHeight * 0.3,
+  // Map each curve point to absolute SVG coords
+  const front = curvePoints.map((cp) => ({
+    x: ox + cp.position * w,
+    y: oy + (cp.width / widthM) * h,   // deeper width → lower y (front edge further down)
   }));
 
-  if (bottomPoints.length > 0) {
-    path += ` L ${bottomPoints[bottomPoints.length - 1].x} ${bottomPoints[bottomPoints.length - 1].y}`;
-    for (let i = bottomPoints.length - 2; i >= 0; i--) {
-      path += ` L ${bottomPoints[i].x} ${bottomPoints[i].y}`;
-    }
+  const first = front[0];
+  const last  = front[front.length - 1];
+
+  // Back edge (straight), right side down to last front point
+  let path = `M ${ox} ${oy} L ${ox + w} ${oy} L ${ox + w} ${last.y}`;
+
+  // Front edge right→left using Catmull-Rom → cubic Bézier for smooth curve
+  const rev = [...front].reverse();
+  path += ` L ${rev[0].x} ${rev[0].y}`;
+  for (let i = 1; i < rev.length; i++) {
+    const p0 = rev[Math.max(0, i - 2)];
+    const p1 = rev[i - 1];
+    const p2 = rev[i];
+    const p3 = rev[Math.min(rev.length - 1, i + 1)];
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    path += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)} ${cp2x.toFixed(1)} ${cp2y.toFixed(1)} ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
   }
 
-  path += " Z";
+  // Left side back up to back-left corner
+  path += ` L ${ox} ${first.y} L ${ox} ${oy} Z`;
   return path;
 }
 
@@ -140,6 +148,10 @@ export function GardenSchema({ plan, isPremium = false, className }: GardenSchem
     : generatePlantPositionsFromPlan(plants, sections, plan.lengthMeters, plan.widthMeters ?? 2, SVG_W - 2 * PADDING, SVG_H - 2 * PADDING);
 
   const curvePoints = (plan.shapeData ?? []) as CurvePoint[];
+  const isOrganic = plan.shapeType === "ORGANIC" && curvePoints.length > 0;
+  const organicPath = isOrganic
+    ? generateOrganicPath(plan.widthMeters ?? 2, curvePoints, SVG_W - 2 * PADDING, SVG_H - 2 * PADDING, PADDING, PADDING)
+    : "";
 
   // Build a plant lookup map
   const plantMap = new Map<string, Plant>();
@@ -309,33 +321,30 @@ export function GardenSchema({ plan, isPremium = false, className }: GardenSchem
                 <circle cx="2" cy="2" r="0.8" fill="#C8A96E" opacity="0.25" />
                 <circle cx="6" cy="6" r="0.6" fill="#A08040" opacity="0.2" />
               </pattern>
+              {isOrganic && (
+                <clipPath id="garden-clip">
+                  <path d={organicPath} />
+                </clipPath>
+              )}
             </defs>
 
-            {/* Background soil */}
-            <rect
-              x={PADDING}
-              y={PADDING}
-              width={SVG_W - 2 * PADDING}
-              height={SVG_H - 2 * PADDING}
-              fill="url(#soil-pattern)"
-              rx="8"
-            />
+            {/* Background soil — clipped to shape for organic borders */}
+            {isOrganic ? (
+              <path d={organicPath} fill="url(#soil-pattern)" />
+            ) : (
+              <rect
+                x={PADDING}
+                y={PADDING}
+                width={SVG_W - 2 * PADDING}
+                height={SVG_H - 2 * PADDING}
+                fill="url(#soil-pattern)"
+                rx="8"
+              />
+            )}
 
             {/* Garden border outline */}
-            {plan.shapeType === "ORGANIC" && curvePoints.length > 0 ? (
-              <path
-                d={generateOrganicPath(
-                  plan.lengthMeters,
-                  plan.widthMeters ?? 2,
-                  curvePoints,
-                  SVG_W - 2 * PADDING,
-                  SVG_H - 2 * PADDING
-                )}
-                fill="none"
-                stroke="#C8A96E"
-                strokeWidth="2"
-                transform={`translate(${PADDING}, ${PADDING})`}
-              />
+            {isOrganic ? (
+              <path d={organicPath} fill="none" stroke="#C8A96E" strokeWidth="2" />
             ) : (
               <rect
                 x={PADDING}
@@ -345,11 +354,12 @@ export function GardenSchema({ plan, isPremium = false, className }: GardenSchem
                 fill="none"
                 stroke="#C8A96E"
                 strokeWidth="2"
-                strokeDasharray={plan.shapeType === "ORGANIC" ? "6,3" : "0"}
                 rx="8"
               />
             )}
 
+            {/* Row dividers, labels, and plants — all clipped to the garden outline */}
+            <g clipPath={isOrganic ? "url(#garden-clip)" : undefined}>
             {/* Row dividers */}
             <line
               x1={PADDING}
@@ -441,6 +451,7 @@ export function GardenSchema({ plan, isPremium = false, className }: GardenSchem
                 </g>
               );
             })}
+            </g>{/* end clip group */}
 
             {/* Dimension labels */}
             <text x={SVG_W / 2} y={SVG_H - 4} textAnchor="middle" fontSize="9" fill="#A08040" fontFamily="monospace">

@@ -34,8 +34,8 @@ When you have at least dimensions + sun, emit at the END of your message:
   "trigger": "generate_plan",
   "gardenSpec": {
     "lengthMeters": <number>,
-    "widthMeters": <number>,
-    "shapeType": "RECTANGLE",
+    "widthMeters": <number, use the MAX width for wavy/organic borders>,
+    "shapeType": "RECTANGLE" | "ORGANIC",
     "sunExposure": "FULL_SUN" | "PARTIAL_SHADE" | "FULL_SHADE",
     "soilType": "CLAY" | "SANDY" | "LOAM" | "CHALKY" | "PEATY",
     "country": "<ISO country code, default BE>",
@@ -43,10 +43,17 @@ When you have at least dimensions + sun, emit at the END of your message:
     "stylePreference": "<cottage|formal|wild|modern|naturalistic, if known>",
     "colorPreference": "<color description, if known>",
     "maintenanceLevel": "LOW" | "MEDIUM" | "HIGH",
-    "name": "<descriptive garden name>"
+    "name": "<descriptive garden name>",
+    "widthAtEndsMeters": <number, ONLY for ORGANIC — width at the two ends>,
+    "widthAtMiddleMeters": <number, ONLY for ORGANIC — width at the middle point>
   }
 }
 \`\`\`
+
+SHAPE RULES:
+- Use "RECTANGLE" for straight-edged borders (default).
+- Use "ORGANIC" whenever the user describes a curved, wavy, kidney-shaped, or tapering front edge.
+- For ORGANIC: set widthMeters = the widest part, widthAtEndsMeters = width at each end, widthAtMiddleMeters = width at the midpoint. The app will render a smooth curved front edge automatically.
 
 When mentioning specific plants, optionally embed plant cards:
 \`\`\`json-plants
