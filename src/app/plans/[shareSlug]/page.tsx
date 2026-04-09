@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Leaf, Calendar, ShoppingCart, Map } from "lucide-react";
+import { Leaf, Calendar, ShoppingCart, Map, BookOpen } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/Navbar";
@@ -9,6 +9,7 @@ import { Footer } from "@/components/layout/Footer";
 import { GardenSchema } from "@/components/garden/GardenSchema";
 import { BloomCalendar } from "@/components/garden/BloomCalendar";
 import { ShoppingList } from "@/components/garden/ShoppingList";
+import { PlantGuide } from "@/components/garden/PlantGuide";
 import { formatDate } from "@/lib/utils";
 import type { GardenPlan, PlanData } from "@/types";
 
@@ -20,7 +21,7 @@ async function getPlan(shareSlug: string) {
   return prisma.gardenPlan.findFirst({
     where: { shareSlug, isPublic: true, status: "COMPLETE" },
     include: {
-      user: { select: { name: true } },
+      user: { select: { name: true, tier: true } },
     },
   });
 }
@@ -41,6 +42,7 @@ export default async function SharedPlanPage({ params }: SharedPlanPageProps) {
 
   const planData = plan.plantList as PlanData | null;
   const creatorFirstName = plan.user.name?.split(" ")[0] ?? "Someone";
+  const isPremium = ["PRO_MONTHLY", "PRO_YEARLY", "ONE_TIME"].includes(plan.user.tier ?? "");
 
   // Cast for component use
   const planForComponents = plan as unknown as GardenPlan;
@@ -95,7 +97,7 @@ export default async function SharedPlanPage({ params }: SharedPlanPageProps) {
             <h2 className="font-display text-xl font-semibold text-garden-forest">Planting Map</h2>
           </div>
           <div className="bg-white rounded-2xl border border-garden-earth-light overflow-hidden p-4">
-            <GardenSchema plan={planForComponents} isPremium={true} />
+            <GardenSchema plan={planForComponents} isPremium={isPremium} hideTooltipDetails={!isPremium} />
           </div>
         </section>
 
@@ -106,8 +108,21 @@ export default async function SharedPlanPage({ params }: SharedPlanPageProps) {
               <Calendar className="w-5 h-5 text-garden-green" />
               <h2 className="font-display text-xl font-semibold text-garden-forest">Bloom Calendar</h2>
             </div>
-            <div className="bg-white rounded-2xl border border-garden-earth-light overflow-hidden p-4">
-              <BloomCalendar plants={planData.plants} isPremium={true} />
+            <div className="bg-white rounded-2xl border border-garden-earth-light overflow-hidden p-4" style={{ minHeight: "200px" }}>
+              <BloomCalendar plants={planData.plants} isPremium={isPremium} />
+            </div>
+          </section>
+        )}
+
+        {/* Plant Guide */}
+        {planData?.plants && (
+          <section className="mb-10">
+            <div className="flex items-center gap-2 mb-4">
+              <BookOpen className="w-5 h-5 text-garden-green" />
+              <h2 className="font-display text-xl font-semibold text-garden-forest">Plant Guide</h2>
+            </div>
+            <div className="bg-white rounded-2xl border border-garden-earth-light overflow-hidden p-4" style={{ minHeight: "200px" }}>
+              <PlantGuide plants={planData.plants} isPremium={isPremium} />
             </div>
           </section>
         )}
@@ -119,8 +134,8 @@ export default async function SharedPlanPage({ params }: SharedPlanPageProps) {
               <ShoppingCart className="w-5 h-5 text-garden-green" />
               <h2 className="font-display text-xl font-semibold text-garden-forest">Shopping List</h2>
             </div>
-            <div className="bg-white rounded-2xl border border-garden-earth-light overflow-hidden p-4">
-              <ShoppingList items={planData.shoppingList} isPremium={true} />
+            <div className="bg-white rounded-2xl border border-garden-earth-light overflow-hidden" style={{ minHeight: "200px" }}>
+              <ShoppingList items={planData.shoppingList} isPremium={isPremium} />
             </div>
           </section>
         )}

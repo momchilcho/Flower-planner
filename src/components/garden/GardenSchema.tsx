@@ -9,6 +9,7 @@ import type { GardenPlan, Plant, Section, PlantPosition, CurvePoint } from "@/ty
 interface GardenSchemaProps {
   plan: GardenPlan;
   isPremium?: boolean;
+  hideTooltipDetails?: boolean;
   width?: number;
   height?: number;
   className?: string;
@@ -123,7 +124,7 @@ function generatePlantPositionsFromPlan(
   return positions;
 }
 
-export function GardenSchema({ plan, isPremium = false, className }: GardenSchemaProps) {
+export function GardenSchema({ plan, isPremium = false, hideTooltipDetails = false, className }: GardenSchemaProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
@@ -496,21 +497,30 @@ export function GardenSchema({ plan, isPremium = false, className }: GardenSchem
               top: tooltip.y - 40,
             }}
           >
-            <div className="font-semibold">
-              {tooltip.position.plantEmoji} {tooltip.position.plantName}
-            </div>
-            {tooltip.plant && (
+            {hideTooltipDetails ? (
               <>
-                {tooltip.plant.latinName && (
-                  <div className="italic text-garden-cream/70">{tooltip.plant.latinName}</div>
-                )}
-                <div className="mt-1 text-xs opacity-80">
-                  {tooltip.position.row} row · H: {tooltip.plant.heightMinCm}–{tooltip.plant.heightMaxCm}cm
+                <div className="font-semibold">{tooltip.position.plantEmoji} 🔒 Plant details locked</div>
+                <div className="text-xs opacity-80 mt-1">Unlock the full plan to see plant info</div>
+              </>
+            ) : (
+              <>
+                <div className="font-semibold">
+                  {tooltip.position.plantEmoji} {tooltip.position.plantName}
                 </div>
-                {tooltip.plant.bloomMonths?.length > 0 && (
-                  <div className="text-xs opacity-80">
-                    Blooms: {tooltip.plant.bloomMonths.map((m) => ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1]).join(", ")}
-                  </div>
+                {tooltip.plant && (
+                  <>
+                    {tooltip.plant.latinName && (
+                      <div className="italic text-garden-cream/70">{tooltip.plant.latinName}</div>
+                    )}
+                    <div className="mt-1 text-xs opacity-80">
+                      {tooltip.position.row} row · H: {tooltip.plant.heightMinCm}–{tooltip.plant.heightMaxCm}cm
+                    </div>
+                    {tooltip.plant.bloomMonths?.length > 0 && (
+                      <div className="text-xs opacity-80">
+                        Blooms: {tooltip.plant.bloomMonths.map((m) => ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1]).join(", ")}
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}
