@@ -175,8 +175,8 @@ export async function POST(req: NextRequest) {
           if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
             const text = event.delta.text;
             fullResponse += text;
-            // Stream each character/chunk
-            controller.enqueue(encoder.encode(`data: ${text}\n\n`));
+            // JSON-encode text so embedded newlines don't corrupt SSE framing
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(text)}\n\n`));
           }
         }
 
@@ -224,7 +224,7 @@ export async function POST(req: NextRequest) {
       } catch (error) {
         console.error("[chat] Streaming error:", error);
         const errMsg = error instanceof Error ? error.message : String(error);
-        controller.enqueue(encoder.encode(`data: Sorry, I encountered an error: ${errMsg}\n\n`));
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(`Sorry, I encountered an error: ${errMsg}`)}\n\n`));
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
         controller.close();
       }

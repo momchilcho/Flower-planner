@@ -134,7 +134,12 @@ export function useChat({ sessionId, onPlanGenerated }: UseChatOptions) {
               }
               continue;
             }
-            aiContent += data;
+            // Regular text tokens are JSON-encoded to preserve embedded newlines
+            try {
+              aiContent += JSON.parse(data);
+            } catch {
+              aiContent += data;
+            }
           }
 
           // Update AI message with streamed content
