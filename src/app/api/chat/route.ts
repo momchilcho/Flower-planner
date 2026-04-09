@@ -42,9 +42,9 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  if (!session) return NextResponse.json({ messages: [] });
+  if (!session) return NextResponse.json({ messages: [], planId: null });
 
-  return NextResponse.json({ messages: session.messages });
+  return NextResponse.json({ messages: session.messages, planId: session.planId ?? null });
 }
 
 export async function POST(req: NextRequest) {

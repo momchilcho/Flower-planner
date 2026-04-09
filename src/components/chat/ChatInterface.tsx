@@ -38,10 +38,7 @@ export function ChatInterface({
 
   const handlePlanGenerated = useCallback((newPlanId: string) => {
     if (onPlanUpdate) {
-      fetch(`/api/plans/${newPlanId}`)
-        .then((r) => r.json())
-        .then((data) => onPlanUpdate(data.plan))
-        .catch(console.error);
+      onPlanUpdate({ id: newPlanId } as Partial<GardenPlan>);
     }
   }, [onPlanUpdate]);
 

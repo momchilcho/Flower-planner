@@ -174,6 +174,18 @@ export function useChat({ sessionId, onPlanGenerated }: UseChatOptions) {
             return m;
           })
         );
+
+        // Recovery: if no [PLAN:id] came through the stream, check the session for an existing plan
+        if (!planId && newSessionId && onPlanGenerated) {
+          fetch(`/api/chat?sessionId=${newSessionId}`)
+            .then((r) => r.json())
+            .then((data) => {
+              if (data.planId) {
+                onPlanGenerated(data.planId);
+              }
+            })
+            .catch(() => {});
+        }
       } catch (err: unknown) {
         if (err instanceof Error && err.name === "AbortError") return;
         const errorMessage = err instanceof Error ? err.message : "Something went wrong";

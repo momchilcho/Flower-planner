@@ -34,20 +34,26 @@ function DesignContent() {
   }, [planId]);
 
   const handlePlanUpdate = (updatedPlan: Partial<GardenPlan>) => {
-    if (updatedPlan.id) {
-      fetch(`/api/plans/${updatedPlan.id}`)
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.plan) {
-            setPlan(data.plan);
-            // On mobile, auto-switch to preview tab so user sees the garden
-            setActiveTab("preview");
-          }
-        })
-        .catch(console.error);
-    } else {
-      setPlan((prev) => prev ? { ...prev, ...updatedPlan } : null);
+    if (!updatedPlan?.id) {
+      if (updatedPlan) {
+        setPlan((prev) => prev ? { ...prev, ...updatedPlan } : null);
+      }
+      return;
     }
+    fetch(`/api/plans/${updatedPlan.id}`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`Plan fetch failed: ${r.status}`);
+        return r.json();
+      })
+      .then((data) => {
+        if (data.plan) {
+          setPlan(data.plan);
+          setActiveTab("preview");
+        }
+      })
+      .catch((err) => {
+        console.error("[design] Failed to load plan:", err);
+      });
   };
 
   const isPremium = session?.user
