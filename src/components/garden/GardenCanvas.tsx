@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Sprout, Lock, Loader2, CheckCircle } from "lucide-react";
+import { Sprout, Lock, Loader2, CheckCircle, Share2, Copy, Check } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { GardenSchema } from "./GardenSchema";
 import { BloomCalendar } from "./BloomCalendar";
@@ -20,14 +20,11 @@ interface GardenCanvasProps {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center p-8 gap-6">
-      {/* Animated garden outline placeholder */}
       <div className="relative w-64 h-40">
         <svg viewBox="0 0 260 160" className="w-full h-full opacity-30">
           <rect x="10" y="10" width="240" height="140" rx="12" fill="none" stroke="#C8A96E" strokeWidth="2" strokeDasharray="8,4" />
-          {/* Row dividers */}
           <line x1="10" y1="60" x2="250" y2="60" stroke="#C8A96E" strokeWidth="1" strokeDasharray="4,4" opacity="0.6" />
           <line x1="10" y1="110" x2="250" y2="110" stroke="#C8A96E" strokeWidth="1" strokeDasharray="4,4" opacity="0.6" />
-          {/* Placeholder plant dots */}
           {[30, 70, 110, 150, 190, 230].map((x) => (
             <circle key={x} cx={x} cy={38} r={10} fill="#C8A96E" opacity="0.3" />
           ))}
@@ -115,37 +112,88 @@ function SneakPeekBanner({ planId }: { planId: string }) {
             ))}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant="garden"
-              className="h-8 text-xs px-3"
-              onClick={() => checkout("onetime")}
-              disabled={!!loading}
-            >
+            <Button size="sm" variant="garden" className="h-8 text-xs px-3" onClick={() => checkout("onetime")} disabled={!!loading}>
               {loading === "onetime" ? <Loader2 className="w-3 h-3 animate-spin" /> : "€29.99 one-time"}
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 text-xs px-3 border-garden-green text-garden-green hover:bg-garden-green/5"
-              onClick={() => checkout("monthly")}
-              disabled={!!loading}
-            >
+            <Button size="sm" variant="outline" className="h-8 text-xs px-3 border-garden-green text-garden-green hover:bg-garden-green/5" onClick={() => checkout("monthly")} disabled={!!loading}>
               {loading === "monthly" ? <Loader2 className="w-3 h-3 animate-spin" /> : "€9.99 / month"}
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 text-xs px-3 text-muted-foreground"
-              onClick={() => checkout("yearly")}
-              disabled={!!loading}
-            >
+            <Button size="sm" variant="ghost" className="h-8 text-xs px-3 text-muted-foreground" onClick={() => checkout("yearly")} disabled={!!loading}>
               {loading === "yearly" ? <Loader2 className="w-3 h-3 animate-spin" /> : "€49.99 / year"}
             </Button>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function ShareButton({ plan }: { plan: GardenPlan }) {
+  const [state, setState] = useState<"idle" | "loading" | "copied" | "error">("idle");
+  const [shareUrl, setShareUrl] = useState<string | null>(plan.isPublic && plan.shareSlug
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/plans/${plan.shareSlug}`
+    : null
+  );
+
+  const handleShare = async () => {
+    if (state === "loading") return;
+
+    // If already public and URL known, just copy
+    if (shareUrl) {
+      await copyToClipboard(shareUrl);
+      return;
+    }
+
+    setState("loading");
+    try {
+      const res = await fetch(`/api/plans/${plan.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPublic: true }),
+      });
+      if (!res.ok) throw new Error("Failed to generate share link");
+      const data = await res.json();
+      const slug = data.plan?.shareSlug;
+      if (!slug) throw new Error("No share slug returned");
+      const url = `${window.location.origin}/plans/${slug}`;
+      setShareUrl(url);
+      await copyToClipboard(url);
+    } catch {
+      setState("error");
+      setTimeout(() => setState("idle"), 2500);
+    }
+  };
+
+  const copyToClipboard = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setState("copied");
+      setTimeout(() => setState("idle"), 2500);
+    } catch {
+      setState("error");
+      setTimeout(() => setState("idle"), 2500);
+    }
+  };
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={handleShare}
+      disabled={state === "loading"}
+      className={cn(
+        "h-8 gap-1.5 text-xs font-body border-garden-earth-light transition-colors",
+        state === "copied" && "border-garden-green text-garden-green bg-garden-green/5",
+        state === "error" && "border-red-300 text-red-500"
+      )}
+    >
+      {state === "loading" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+      {state === "copied" && <Check className="w-3.5 h-3.5" />}
+      {state === "error" && <Share2 className="w-3.5 h-3.5" />}
+      {state === "idle" && (shareUrl ? <Copy className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />)}
+      {state === "loading" ? "Generating…" : state === "copied" ? "Link copied!" : state === "error" ? "Try again" : "Share"}
+    </Button>
   );
 }
 
@@ -175,8 +223,8 @@ export function GardenCanvas({ plan, isPremium = false, className }: GardenCanva
         onValueChange={setActiveTab}
         className="flex flex-col h-full"
       >
-        <div className="px-4 py-2 border-b border-garden-earth-light flex-shrink-0">
-          <TabsList className="w-full h-9">
+        <div className="px-3 py-2 border-b border-garden-earth-light flex-shrink-0 flex items-center gap-2">
+          <TabsList className="flex-1 h-9">
             <TabsTrigger value="schema" className="flex-1 text-xs">
               🗺️ Schema
             </TabsTrigger>
@@ -190,6 +238,7 @@ export function GardenCanvas({ plan, isPremium = false, className }: GardenCanva
               🛒 Shop {!isPremium && "🔒"}
             </TabsTrigger>
           </TabsList>
+          <ShareButton plan={plan} />
         </div>
 
         <div className="flex-1 overflow-hidden relative min-h-0">
@@ -197,11 +246,9 @@ export function GardenCanvas({ plan, isPremium = false, className }: GardenCanva
             {isPremium ? (
               <GardenSchema plan={plan} isPremium={true} className="h-full" />
             ) : (
-              /* Free users: show schema (sneak peek) + upgrade banner below */
               <div className="h-full flex flex-col">
                 <div className="flex-1 min-h-0 relative">
                   <GardenSchema plan={plan} isPremium={false} className="h-full" />
-                  {/* Gradient fade at the bottom to hint there's more */}
                   <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white/80 to-transparent pointer-events-none" />
                 </div>
                 <SneakPeekBanner planId={plan.id} />

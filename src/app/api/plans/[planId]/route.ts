@@ -51,12 +51,6 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { planId: string } }
 ) {
-  const session = await getServerSession();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const userId = (session.user as { id: string }).id;
   const { planId } = params;
 
   const plan = await prisma.gardenPlan.findUnique({
@@ -64,7 +58,16 @@ export async function PATCH(
     select: { userId: true },
   });
 
-  if (!plan || plan.userId !== userId) {
+  if (!plan) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  // Allow authenticated owner OR anonymous plans (no session required for anonymous)
+  const session = await getServerSession();
+  const userId = (session?.user as { id?: string })?.id;
+  const planIsAnonymous = await isAnonymousOwner(plan.userId);
+
+  if (!planIsAnonymous && plan.userId !== userId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
