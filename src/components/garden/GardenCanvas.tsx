@@ -7,7 +7,6 @@ import { GardenSchema } from "./GardenSchema";
 import { BloomCalendar } from "./BloomCalendar";
 import { ShoppingList } from "./ShoppingList";
 import { PlantGuide } from "./PlantGuide";
-import { GardenVisualization } from "./GardenVisualization";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { GardenPlan, PlanData } from "@/types";
@@ -181,9 +180,6 @@ export function GardenCanvas({ plan, isPremium = false, className }: GardenCanva
             <TabsTrigger value="schema" className="flex-1 text-xs">
               🗺️ Schema
             </TabsTrigger>
-            <TabsTrigger value="photo" className="flex-1 text-xs">
-              ✨ Photo
-            </TabsTrigger>
             <TabsTrigger value="bloom" className="flex-1 text-xs">
               📅 Bloom {!isPremium && "🔒"}
             </TabsTrigger>
@@ -211,10 +207,6 @@ export function GardenCanvas({ plan, isPremium = false, className }: GardenCanva
                 <SneakPeekBanner planId={plan.id} />
               </div>
             )}
-          </TabsContent>
-
-          <TabsContent value="photo" className="h-full m-0">
-            <GardenVisualization planId={plan.id} className="h-full" />
           </TabsContent>
 
           <TabsContent value="bloom" className="h-full m-0">
