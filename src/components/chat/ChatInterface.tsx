@@ -18,10 +18,10 @@ interface ChatInterfaceProps {
 }
 
 const STARTER_PROMPTS = [
-  "I have a sunny 4m × 2m border with clay soil",
-  "Design me a bee-friendly cottage garden",
-  "I want low-maintenance plants for shade",
-  "Create a colorful border for Belgium climate",
+  "I have a sunny 4m × 2m border in Belgium with clay soil. I want a low-maintenance cottage-style garden with purple and yellow flowers.",
+  "Design a 6m × 1.5m shaded border for the Netherlands. Sandy soil, I prefer white and soft pink tones with a naturalistic feel.",
+  "I need a bee-friendly 3m × 3m garden bed in Germany. Full sun, loam soil, mixed colors — medium maintenance is fine.",
+  "Create a 5m × 2m fragrant border for the UK. Partial shade, chalky soil, cottage style with blues and whites. Keep it low maintenance.",
 ];
 
 export function ChatInterface({
@@ -244,7 +244,7 @@ export function ChatInterface({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Describe your garden... (Shift+Enter for new line)"
+              placeholder="e.g. 4m × 2m sunny border in Belgium, clay soil, low maintenance, purple flowers…"
               className="min-h-[44px] max-h-[120px] resize-none pr-2 bg-garden-cream border-garden-earth-light focus-visible:ring-garden-green scrollbar-chat"
               disabled={isLoading}
               rows={1}
