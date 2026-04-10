@@ -92,11 +92,12 @@ function DesignContent() {
           </Tabs>
         </div>
         <div className="flex-1 min-h-0 overflow-hidden">
-          {activeTab === "chat" ? (
+          <div className={activeTab === "chat" ? "h-full" : "hidden"}>
             <ChatInterface sessionId={sessionId} planId={plan?.id} onPlanUpdate={handlePlanUpdate} className="h-full rounded-none border-none" />
-          ) : (
+          </div>
+          <div className={activeTab === "preview" ? "h-full" : "hidden"}>
             <GardenCanvas plan={plan} isPremium={isPremium} className="h-full rounded-none border-none" />
-          )}
+          </div>
         </div>
       </div>
     </div>
