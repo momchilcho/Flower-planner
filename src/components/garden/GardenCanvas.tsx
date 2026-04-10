@@ -111,7 +111,7 @@ function SneakPeekBanner({ planId }: { planId: string }) {
               </span>
             ))}
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2">
             <Button size="sm" variant="garden" className="h-8 text-xs px-3" onClick={() => checkout("onetime")} disabled={!!loading}>
               {loading === "onetime" ? <Loader2 className="w-3 h-3 animate-spin" /> : "€29.99 one-time"}
             </Button>
@@ -226,16 +226,16 @@ export function GardenCanvas({ plan, isPremium = false, className }: GardenCanva
         <div className="px-3 py-2 border-b border-garden-earth-light flex-shrink-0 flex items-center gap-2">
           <TabsList className="flex-1 h-9">
             <TabsTrigger value="schema" className="flex-1 text-xs">
-              🗺️ Schema
+              🗺️ Map
             </TabsTrigger>
             <TabsTrigger value="bloom" className="flex-1 text-xs">
-              📅 Bloom {!isPremium && "🔒"}
+              📅 Bloom
             </TabsTrigger>
             <TabsTrigger value="plants" className="flex-1 text-xs">
-              🌿 Plants {!isPremium && "🔒"}
+              🌿 Plants
             </TabsTrigger>
             <TabsTrigger value="shopping" className="flex-1 text-xs">
-              🛒 Shop {!isPremium && "🔒"}
+              🛒 Shop
             </TabsTrigger>
           </TabsList>
           <ShareButton plan={plan} />

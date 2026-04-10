@@ -193,6 +193,13 @@ export function GardenSchema({ plan, isPremium = false, hideTooltipDetails = fal
 
   const handleMouseUp = () => setIsPanning(false);
 
+  const handlePlantClick = useCallback((e: React.MouseEvent, plant: Plant | null, pos: PlantPosition) => {
+    e.stopPropagation();
+    setTooltip((current) =>
+      current?.position.id === pos.id ? null : { x: e.clientX, y: e.clientY, plant, position: pos }
+    );
+  }, []);
+
   const handleExportPNG = async () => {
     if (!svgRef.current || !isPremium) return;
     setIsExporting(true);
@@ -295,6 +302,7 @@ export function GardenSchema({ plan, isPremium = false, hideTooltipDetails = fal
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onClick={() => setTooltip(null)}
       >
         <div
           style={{
@@ -429,6 +437,7 @@ export function GardenSchema({ plan, isPremium = false, hideTooltipDetails = fal
                       setTooltip((t) => t ? { ...t, x: e.clientX, y: e.clientY } : null);
                     }
                   }}
+                  onClick={(e) => handlePlantClick(e, plant ?? null, pos)}
                 >
                   <circle
                     cx={x}
@@ -493,8 +502,8 @@ export function GardenSchema({ plan, isPremium = false, hideTooltipDetails = fal
           <div
             className="garden-tooltip"
             style={{
-              left: tooltip.x + 12,
-              top: tooltip.y - 40,
+              left: Math.min(tooltip.x + 12, window.innerWidth - 220),
+              top: Math.max(tooltip.y - 40, 10),
             }}
           >
             {hideTooltipDetails ? (
