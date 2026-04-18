@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { Lock, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -194,9 +195,11 @@ export function PlantGuide({ plants, isPremium = false, className }: PlantGuideP
               <p className="text-xs text-muted-foreground font-body mb-3">
                 Upgrade to Pro to see all plant details, care guides, and sourcing information.
               </p>
-              <Button variant="garden" size="sm" className="w-full">
-                Unlock All Plants
-              </Button>
+              <Link href="/pricing">
+                <Button variant="garden" size="sm" className="w-full">
+                  Unlock All Plants
+                </Button>
+              </Link>
             </div>
           </div>
         )}

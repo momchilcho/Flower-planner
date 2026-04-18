@@ -38,6 +38,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "No image provided" }, { status: 400 });
       }
       const raw = body.imageBase64 as string;
+      if (raw.length > 7_000_000) {
+        return NextResponse.json({ error: "Image too large" }, { status: 400 });
+      }
       if (raw.includes(",")) {
         const parts = raw.split(",");
         imageBase64 = parts[1] ?? "";

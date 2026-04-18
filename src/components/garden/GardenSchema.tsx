@@ -69,6 +69,15 @@ function generateOrganicPath(
   return path;
 }
 
+function seededRandom(seed: string, index: number): number {
+  let h = index + 1;
+  for (let i = 0; i < seed.length; i++) {
+    h = Math.imul(h ^ seed.charCodeAt(i), 2654435761);
+  }
+  h ^= h >>> 16;
+  return (h >>> 0) / 0xffffffff;
+}
+
 // Generate plant positions from plan data
 function generatePlantPositionsFromPlan(
   plants: Plant[],
@@ -102,8 +111,8 @@ function generatePlantPositionsFromPlan(
       const plantsToPlace = Math.max(1, Math.round(plantsPerRow / rowPlants.length));
 
       for (let i = 0; i < plantsToPlace && xPos < 0.97; i++) {
-        const yVariation = Math.random() * (yMax - yMin) + yMin;
-        const xVariation = xPos + (Math.random() - 0.5) * spacingFrac * 0.3;
+        const yVariation = seededRandom(plant.commonName + row, plantIdx * 100 + i) * (yMax - yMin) + yMin;
+        const xVariation = xPos + (seededRandom(plant.commonName + row, plantIdx * 100 + i + 50) - 0.5) * spacingFrac * 0.3;
 
         positions.push({
           id: `pos-${row}-${plantIdx}-${i}`,

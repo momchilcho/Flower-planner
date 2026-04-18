@@ -69,9 +69,11 @@ function EmptyState() {
 
 function SneakPeekBanner({ planId }: { planId: string }) {
   const [loading, setLoading] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const checkout = async (priceType: "monthly" | "yearly" | "onetime") => {
     setLoading(priceType);
+    setCheckoutError(null);
     try {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
@@ -83,6 +85,8 @@ function SneakPeekBanner({ planId }: { planId: string }) {
       else throw new Error(error ?? "Checkout failed");
     } catch {
       setLoading(null);
+      setCheckoutError("Something went wrong. Please try again.");
+      setTimeout(() => setCheckoutError(null), 3000);
     }
   };
 
@@ -122,6 +126,9 @@ function SneakPeekBanner({ planId }: { planId: string }) {
               {loading === "yearly" ? <Loader2 className="w-3 h-3 animate-spin" /> : "€49.99 / year"}
             </Button>
           </div>
+          {checkoutError && (
+            <p className="text-xs text-red-500 mt-1">{checkoutError}</p>
+          )}
         </div>
       </div>
     </div>

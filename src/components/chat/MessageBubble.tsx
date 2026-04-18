@@ -18,7 +18,6 @@ function stripInternalBlocks(content: string): string {
     .replace(/```json-garden-spec[\s\S]*?```/g, "")
     .replace(/```json-plants[\s\S]*?```/g, "")
     .replace(/```json[\s\S]*?```/g, "")
-    .replace(/```[\s\S]*?```/g, "")
     // Remove incomplete/open blocks (streaming: closing ``` not yet received)
     .replace(/```[\s\S]*$/g, "")
     // Collapse 3+ consecutive newlines into 2

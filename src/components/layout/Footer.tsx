@@ -40,6 +40,7 @@ export function Footer() {
     if (email) {
       setSubscribed(true);
       setEmail("");
+      setTimeout(() => setSubscribed(false), 3000);
     }
   };
 

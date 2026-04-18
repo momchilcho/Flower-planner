@@ -30,7 +30,7 @@ export function BloomCalendar({ plants, isPremium = false, className }: BloomCal
 
   // Plants blooming in selected month
   const monthPlants = selectedMonth
-    ? bloomingPlants.filter((p) => p.bloomMonths.includes(selectedMonth))
+    ? bloomingPlants.filter((p) => p.bloomMonths?.includes(selectedMonth) ?? false)
     : [];
 
   if (bloomingPlants.length === 0) {
@@ -54,7 +54,7 @@ export function BloomCalendar({ plants, isPremium = false, className }: BloomCal
           {MONTHS.map((month, idx) => {
             const monthNum = idx + 1;
             const isLocked = !isPremium && monthNum > FREE_MONTHS;
-            const bloomCount = bloomingPlants.filter((p) => p.bloomMonths.includes(monthNum)).length;
+            const bloomCount = bloomingPlants.filter((p) => p.bloomMonths?.includes(monthNum) ?? false).length;
 
             return (
               <button
@@ -128,7 +128,7 @@ export function BloomCalendar({ plants, isPremium = false, className }: BloomCal
               <div className="flex-1 grid grid-cols-12 gap-0.5">
                 {MONTHS.map((_, idx) => {
                   const monthNum = idx + 1;
-                  const isBloom = plant.bloomMonths.includes(monthNum);
+                  const isBloom = plant.bloomMonths?.includes(monthNum) ?? false;
                   const isLocked = !isPremium && monthNum > FREE_MONTHS;
 
                   return (

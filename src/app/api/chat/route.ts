@@ -80,6 +80,10 @@ export async function POST(req: NextRequest) {
   }
   const { message, sessionId, imageBase64 } = body;
 
+  if (imageBase64 && imageBase64.length > 7_000_000) {
+    return NextResponse.json({ error: "Image too large" }, { status: 400 });
+  }
+
   let authSession;
   try {
     authSession = await getServerSession();
@@ -280,19 +284,10 @@ export async function POST(req: NextRequest) {
 }
 
 async function getOrCreateAnonymousUser(): Promise<string> {
-  // Get or create a shared anonymous user for unauth sessions
-  let anonUser = await prisma.user.findFirst({
+  const anonUser = await prisma.user.upsert({
     where: { email: "anonymous@gardengenius.app" },
+    update: {},
+    create: { email: "anonymous@gardengenius.app", name: "Guest" },
   });
-
-  if (!anonUser) {
-    anonUser = await prisma.user.create({
-      data: {
-        email: "anonymous@gardengenius.app",
-        name: "Guest",
-      },
-    });
-  }
-
   return anonUser.id;
 }

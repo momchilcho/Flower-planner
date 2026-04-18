@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import type { ChatMessage } from "@/types";
 
 interface UseChatOptions {
@@ -31,6 +31,18 @@ export function useChat({ sessionId, onPlanGenerated }: UseChatOptions) {
       console.error("Failed to load messages:", err);
     }
   }, []);
+
+  useEffect(() => {
+    if (sessionId && sessionId !== currentSessionId) {
+      setCurrentSessionId(sessionId);
+    }
+  }, [sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (currentSessionId && messages.length === 0) {
+      loadMessages(currentSessionId);
+    }
+  }, [currentSessionId, loadMessages]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendMessage = useCallback(
     async ({ text, imageBase64 }: SendMessageOptions) => {
@@ -190,8 +202,13 @@ export function useChat({ sessionId, onPlanGenerated }: UseChatOptions) {
         if (err instanceof Error && err.name === "AbortError") return;
         const errorMessage = err instanceof Error ? err.message : "Something went wrong";
         setError(errorMessage);
-        // Remove the placeholder AI message on error
-        setMessages((prev) => prev.filter((m) => m.id !== aiPlaceholderId));
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === aiPlaceholderId
+              ? { ...m, content: "Sorry, something went wrong. Please try again." }
+              : m
+          )
+        );
       } finally {
         setIsLoading(false);
         abortControllerRef.current = null;

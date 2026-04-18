@@ -275,10 +275,13 @@ export async function createOrUpdatePlan(
         data: commonFields,
       });
     } else {
-      plan = await prisma.gardenPlan.create({ data: { userId, ...commonFields } });
-      await prisma.chatSession.update({
-        where: { id: sessionId },
-        data: { planId: plan.id },
+      plan = await prisma.$transaction(async (tx) => {
+        const newPlan = await tx.gardenPlan.create({ data: { userId, ...commonFields } });
+        await tx.chatSession.update({
+          where: { id: sessionId },
+          data: { planId: newPlan.id },
+        });
+        return newPlan;
       });
     }
   } else {
