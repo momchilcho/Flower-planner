@@ -5,7 +5,6 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import { compare } from "bcryptjs";
 import type { Adapter } from "next-auth/adapters";
-import "@/types";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as Adapter,
@@ -64,7 +63,8 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.id as string;
+        const user = session.user as { id?: string; tier?: string; subStatus?: string };
+        user.id = token.id as string;
 
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
@@ -72,8 +72,8 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (dbUser) {
-          session.user.tier = dbUser.tier;
-          session.user.subStatus = dbUser.subStatus;
+          user.tier = dbUser.tier;
+          user.subStatus = dbUser.subStatus;
         }
       }
       return session;
@@ -93,7 +93,7 @@ export async function getCurrentUser() {
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: (session.user as { id?: string }).id },
   });
 
   return user;
